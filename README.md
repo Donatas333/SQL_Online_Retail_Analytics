@@ -1,130 +1,198 @@
 # Online Retail SQL Analytics Project
-Production-style SQL analytics pipeline built in MySQL 8.
 
-Demonstrates data ingestion, transformation, validation, retention modeling, and RFM segmentation on a real-world transactional dataset.
-## Project Overview
+End-to-end SQL analytics pipeline built in **MySQL 8**, transforming raw e-commerce transaction data into actionable business intelligence.
 
-This project analyzes transactional e-commerce data (2009–2011) using MySQL 8.
-The goal was to build a production-style analytics pipeline from raw CSV ingestion to business-level insights including KPIs, retention, and RFM segmentation.
+## Quick Overview
 
-The project demonstrates:
-- Data ingestion using `LOAD DATA INFILE`
-- Data cleaning and transformation
-- Data validation checks
-- KPI computation
-- Cohort retention analysis
-- RFM customer segmentation
-- Window functions and advanced SQL
+- **Dataset:** Online Retail II (Dec 2009 – Dec 2011)
+- **Volume:** 1,060,000 raw transactions → ~800,000 cleaned transactions
+- **Orders:** 36,969 unique orders
+- **Customers:** 5,878 unique customers across multiple countries
+- **Revenue:** £1,774,329.16
 
 ---
 
-## Dataset
+## Data Preparation & Cleaning
 
-Online Retail transactional dataset (2009–2011).
+### Issues Encountered & Solutions
 
-Time range:
-- Start: December 2009
-- End: December 2011
+**CSV Import Challenges**
+- Large file size (~90MB) and MySQL `secure_file_priv` restrictions → Resolved using `LOAD DATA INFILE` with secure directory
+- Excel formatting converted numeric IDs to floats (12345 → 12345.0) → Cast all IDs as VARCHAR during import, then INT during transformation
+- Inconsistent delimiter/quote handling → Used `FIELDS TERMINATED BY ','` with `OPTIONALLY ENCLOSED BY '"'`
 
-After cleaning:
-- 36,969 orders
-- 5,878 customers
-- £1,774,329.16 total revenue
+### Transformation Rules Applied
+
+| Issue | Solution | Impact |
+|-------|----------|--------|
+| **Cancelled Orders** | Removed invoices starting with 'C' | -23,031 rows |
+| **Negative Quantity** | Filtered Quantity < 0 | -1,907 rows |
+| **Invalid Pricing** | Removed UnitPrice ≤ 0 | -3,265 rows |
+| **Missing CustomerID** | Excluded NULL customers | -168,494 rows |
+| **Result** | Clean analytical dataset | **36,969 valid orders** |
+
+### Cleaning Process
+
+```sql
+-- Example: Create clean dataset
+CREATE TABLE online_retail_clean AS
+SELECT 
+    InvoiceNo,
+    CAST(CustomerID AS UNSIGNED) AS CustomerID,
+    InvoiceDate,
+    Quantity,
+    UnitPrice,
+    (Quantity * UnitPrice) AS Revenue
+FROM online_retail_raw
+WHERE InvoiceNo NOT LIKE 'C%'      -- Remove cancellations
+  AND Quantity > 0                  -- Remove negative quantities
+  AND UnitPrice > 0                 -- Remove invalid prices
+  AND CustomerID IS NOT NULL;       -- Remove missing customers
+```
 
 ---
 
-## Data Pipeline
+## Business Insights
 
-1. Raw ingestion from CSV
-2. Clean transformation layer
-3. Data validation checks
-4. KPI layer
-5. Time trend analysis
-6. Customer analytics
-7. Product analytics
-8. Cohort retention
-9. RFM segmentation
+### Key Metrics
+- **Total Orders:** 36,969
+- **Total Customers:** 5,878  
+- **Repeat Customer Rate:** 72.39%
+- **Average Order Value:** £479.95
 
-The architecture follows a layered structure:
+## Business Insights
+
+### Core Business KPIs
+
+![Core KPIs](assets/Core_KPI.png)
+
+The cleaned dataset contains **36,969 valid orders from 5,878 unique customers**, generating **£1.77M in revenue**.
+
+Key observations:
+
+- **Average order value:** £479.95  
+- **Repeat customer rate:** 72.39%
+
+A repeat rate above 70% indicates strong customer loyalty and suggests that **customer retention strategies are likely to have higher ROI than purely focusing on new customer acquisition**.
+
+---
+
+### Customer Cohort Retention
+
+![Customer Cohort Retention](assets/Heatmap.png)
+
+Cohort analysis groups customers by the month of their **first purchase** and tracks their activity over time.
+
+Key patterns:
+
+- Retention drops significantly after the first purchase month (Month 0 → Month 1)
+- Approximately **30–40% of customers continue purchasing in subsequent months**
+- A stable core of repeat buyers persists across multiple months
+
+This indicates a **healthy returning customer base**, although improving early-stage retention (Months 1–3) could significantly increase long-term customer value.
+
+---
+
+### Customer Segmentation (RFM Model)
+
+![Customer Segmentation](assets/RFM_model.png)
+
+Customers were segmented using the **RFM framework**:
+
+- **Recency** – days since last purchase  
+- **Frequency** – number of purchases  
+- **Monetary value** – total spending  
+
+Key findings:
+
+- **512 "Champion" customers** represent the highest value segment
+- **1,040 Loyal Customers** contribute steady repeat revenue
+- **1,986 Lost Customers** represent a large reactivation opportunity
+
+This segmentation enables targeted strategies such as:
+
+- retention campaigns for **At Risk** customers
+- loyalty rewards for **Champions**
+- reactivation campaigns for **Lost** customers
+
+---
+
+### Product Performance
+
+![Top Products](assets/Top_20_products.png)
+
+Revenue is concentrated among a relatively small number of products.
+
+The top products — primarily decorative and home-gift items — generate a disproportionately large share of total revenue.
+
+This suggests:
+
+- strong demand for **seasonal and gift-oriented products**
+- potential opportunity to expand similar product categories
+
+---
+
+### High-Value Customers
+
+![Top Customers](assets/top_20_customers.png)
+
+Customer-level revenue analysis shows that a small number of customers contribute significantly to total sales.
+
+Top customers generate **£600+ in lifetime revenue**, despite relatively few orders.
+
+This pattern is typical in retail, where **high-value repeat customers drive a large share of revenue**.
+
+Strategies such as loyalty programs or targeted promotions could further increase the value of these customers.
+
+---
+
+## Technical Implementation
+
+**SQL Techniques:**
+- `LOAD DATA INFILE` for bulk import with secure file handling
+- Window functions (`NTILE`, `ROW_NUMBER`) for RFM scoring
+- `TIMESTAMPDIFF` for cohort analysis
+- Derived columns (Revenue, Month, Year) during transformation
+
+**Data Quality Checks:**
+- Row count validation at each pipeline stage
+- NULL checks on critical fields (CustomerID, Quantity, UnitPrice)
+- Revenue reconciliation (SUM validation)
+- Date range validation
+
+**Pipeline Architecture:**
 Raw → Clean → Business → Analytics
 
 ---
 
-## Core Business KPIs
+## Project Structure
 
-- **Total Revenue:** £1,774,329.16
-- **Total Orders:** 36,969
-- **Total Customers:** 5,878
-- **Average Order Value (AOV):** £479.95
-- **Repeat Customer Rate:** 72.39%
-
-### Peak Month
-- **November 2010**
-- Revenue: £1,172,336.04
-
----
-
-## Key Insights
-
-### 1. Strong Customer Loyalty
-72.39% of customers placed more than one order.
-This indicates strong repeat purchasing behavior and high customer engagement.
-
-### 2. High Order Value Business Model
-With an AOV of £479.95, this business operates in a mid-to-high value transactional range rather than low-cost mass retail.
-
-### 3. Revenue Seasonality
-November 2010 shows a major revenue spike, likely driven by seasonal holiday demand.
-This indicates heavy Q4 dependence.
-
-### 4. Customer Retention Patterns
-Cohort analysis shows declining retention over time, with strong Month 0 activity and expected decay afterward.
-This is typical for e-commerce but presents opportunity for lifecycle marketing.
-
-### 5. Revenue Concentration
-RFM segmentation shows a small percentage of high-value customers drive a disproportionate share of revenue.
+```
+01_schema_setup.sql          -- Create raw table
+02_raw_import.sql            -- Load CSV data
+03_clean_transform.sql       -- Apply cleaning rules
+04_data_validation.sql       -- Validate output
+05_business_kpis.sql         -- Compute metrics
+06_time_trends.sql           -- Revenue analysis
+07_customer_analytics.sql    -- Top customers
+08_product_analytics.sql     -- Product performance
+09_cohort_retention.sql      -- Retention modeling
+10_rfm_segmentation.sql      -- Customer segmentation
+```
 
 ---
 
-## Business Recommendations
+## Key Takeaway
 
-1. Invest in retention marketing during Months 1–3 post acquisition.
-2. Launch loyalty campaigns before Q4 to maximize seasonal momentum.
-3. Develop targeted offers for high-value RFM segments.
-4. Analyze churn signals for customers inactive after Month 1.
-5. Diversify revenue outside November to reduce seasonality risk.
+This project demonstrates an end-to-end analytics workflow: importing messy raw data, cleaning and transforming it into a reliable analytical dataset, and using SQL to extract meaningful business insights.
 
----
+## Lessons Learned
 
-## Technical Highlights
+Working with raw transactional data revealed several common real-world challenges:
 
-- Used `LOAD DATA INFILE` with secure_file_priv restrictions
-- Resolved LF vs CRLF line-ending issue (0-row import bug)
-- Applied data cleaning rules:
-  - Removed cancellations (Invoice LIKE 'C%')
-  - Removed negative quantity and price
-  - Removed null customer IDs
-- Built cohort analysis using `TIMESTAMPDIFF`
-- Built RFM scoring using `NTILE`
-- Used window functions (LEAD, ROW_NUMBER)
+• CSV imports often contain formatting artifacts from Excel  
+• Large datasets require careful import strategies in MySQL  
+• Data cleaning frequently requires more effort than analysis itself  
+• Ensuring data quality is critical before performing business analysis  
 
----
-
-## How To Reproduce
-
-Run SQL files in order:
-
-1. `01_schema_setup.sql`
-2. `02_raw_import.sql`
-3. `03_clean_transform.sql`
-4. `04_data_validation.sql`
-5. `05_business_kpis.sql`
-6. `06_time_trends.sql`
-7. `07_customer_analytics.sql`
-8. `08_product_analytics.sql`
-9. `09_cohort_retention.sql`
-10. `10_rfm_segmentation.sql`
-
----
-
-## Repository Structure
+Addressing these issues was essential to produce a reliable analytical dataset.
