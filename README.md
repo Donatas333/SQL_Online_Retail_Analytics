@@ -2,7 +2,20 @@
 
 End-to-end SQL analytics pipeline built in **MySQL 8**, transforming raw e-commerce transaction data into actionable business intelligence.
 
-## Quick Overview
+---
+
+## Table of Contents
+
+1. [Quick Overview](#1-quick-overview)
+2. [Data Preparation & Cleaning](#2-data-preparation--cleaning)
+3. [Business Insights](#3-business-insights)
+4. [Technical Implementation](#4-technical-implementation)
+5. [Project Structure](#5-project-structure)
+6. [Key Takeaway & Lessons Learned](#6-key-takeaway--lessons-learned)
+
+---
+
+## 1. Quick Overview
 
 - **Dataset:** Online Retail II (Dec 2009 – Dec 2011)
 - **Volume:** 1,060,000 raw transactions → ~800,000 cleaned transactions
@@ -12,7 +25,7 @@ End-to-end SQL analytics pipeline built in **MySQL 8**, transforming raw e-comme
 
 ---
 
-## Data Preparation & Cleaning
+## 2. Data Preparation & Cleaning
 
 ### Issues Encountered & Solutions
 
@@ -52,7 +65,7 @@ WHERE InvoiceNo NOT LIKE 'C%'      -- Remove cancellations
 
 ---
 
-## Business Insights
+## 3. Business Insights
 
 ### Key Metrics
 - **Total Orders:** 36,969
@@ -146,7 +159,7 @@ Strategies such as loyalty programs or targeted promotions could further increas
 
 ---
 
-## Technical Implementation
+## 4. Technical Implementation
 
 **SQL Techniques:**
 - `LOAD DATA INFILE` for bulk import with secure file handling
@@ -165,7 +178,7 @@ Raw → Clean → Business → Analytics
 
 ---
 
-## Project Structure
+## 5. Project Structure
 
 ```
 01_schema_setup.sql          -- Create raw table
@@ -182,7 +195,7 @@ Raw → Clean → Business → Analytics
 
 ---
 
-## Key Takeaway
+## 6. Key Takeaway
 
 This project demonstrates an end-to-end analytics workflow: importing messy raw data, cleaning and transforming it into a reliable analytical dataset, and using SQL to extract meaningful business insights.
 
