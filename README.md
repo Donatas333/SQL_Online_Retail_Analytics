@@ -77,7 +77,7 @@ WHERE InvoiceNo NOT LIKE 'C%'      -- Remove cancellations
 
 ### Core Business KPIs
 
-![Core KPIs](assets/Core_KPI.png)
+![Core KPIs](assets/Core_KPi.png)
 
 The cleaned dataset contains **36,969 valid orders from 5,878 unique customers**, generating **£1.77M in revenue**.
 
